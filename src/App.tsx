@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import TestPredict from "./components/TestPredict";
+import Fertilizers from "./components/Fertilizers";
 import { Dashboard } from "./pages/Dashboard"; // Import Dashboard
 import "./index.css";
 import { Layout } from "./components/Layout";
@@ -37,6 +38,14 @@ const App = () => (
             }
           />
           <Route path="*" element={<NotFound />} />
+          <Route
+            path="/fertilizer"
+            element={
+              <Layout>
+                <Fertilizers />
+              </Layout>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

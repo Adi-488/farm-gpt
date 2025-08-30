@@ -1,7 +1,6 @@
 import {
   Home,
   Leaf,
-  Target,
   Cloud,
   Droplet,
   AlertTriangle,
@@ -14,8 +13,8 @@ const navigation = [
   { name: "Home", icon: Home, path: "/" },
   { name: "Dashboard", icon: Home, path: "/dashboard" },
   { name: "Crop Predictor", icon: TestTube, path: "/predict" }, // Added TestPredict
+  { name: "Fertilizer Recommendations", icon: TestTube, path: "/Fertilizer" },
   { name: "Farm Management", icon: Leaf, path: "/farm-management" },
-  { name: "Crop Recommendations", icon: Target, path: "/crop-recommendations" },
   { name: "Weather", icon: Cloud, path: "/weather" },
   { name: "Soil Metrics", icon: Droplet, path: "/soil-metrics" },
   { name: "Disease Alerts", icon: AlertTriangle, path: "/disease-alerts" },

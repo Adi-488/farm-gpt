@@ -9,7 +9,7 @@ fertilizer_content = {
 
 def recommend_fertilizer(crop, actual_N, actual_P, actual_K):
     # Load crop requirements
-    df = pd.read_csv("fertilizer_data.csv")
+    df = pd.read_csv("D:\\Intellify Hackathon\\NutriGuide Datasets\\fertilizer_data.csv")
     crop_data = df[df['Crop'].str.lower() == crop.lower()]
     if crop_data.empty:
         return {"error": f"No data found for crop '{crop}'"}

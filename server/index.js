@@ -33,6 +33,20 @@ app.post("/api/predict", async (req, res) => {
   }
 });
 
+// Add a new route for fertilizer recommendation
+app.post("/api/fertilizer/recommend", async (req, res) => {
+  try {
+    const { data } = await axios.post(
+      "http://localhost:9000/api/fertilizer/recommend",
+      req.body
+    );
+    res.json(data);
+  } catch (err) {
+    console.error("Error calling Fertilizer API:", err.message);
+    res.status(502).json({ error: "Fertilizer API not responding" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Node.js server running on http://localhost:${PORT}`);
 });

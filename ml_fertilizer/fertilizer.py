@@ -1,4 +1,4 @@
-# app.py
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +20,7 @@ app = FastAPI(title="Sustainable Farming API", lifespan=lifespan)
 # Allow React/Vite dev origin; restrict in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,12 +43,12 @@ class FertilizerResponse(BaseModel):
 @app.post("/api/fertilizer/recommend", response_model=FertilizerResponse)
 def api_recommend(req: FertilizerRequest):
     result = recommend_fertilizer(
-        crop=req.crop,
-        actual_N=req.actual_N,
-        actual_P=req.actual_P,
-        actual_K=req.actual_K,
-        df=app.state.crop_df,  # use preloaded internal CSV
-    )
+    crop=req.crop,
+    actual_N=req.actual_N,
+    actual_P=req.actual_P,
+    actual_K=req.actual_K,
+)
+
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
