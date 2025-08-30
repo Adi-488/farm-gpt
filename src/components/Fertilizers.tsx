@@ -8,6 +8,16 @@ type FertilizerFormData = {
   area_in_hectares: string;
 };
 
+type FertilizerItem = {
+  name: string;
+  amount_kg_per_hectare: number;
+  stage: string;
+};
+
+type FertilizerResult = {
+  fertilizer_recommendation: FertilizerItem[];
+};
+
 const CROPS = [
   "cotton",
   "horsegram",
@@ -73,12 +83,6 @@ export default function FertilizerRecommend() {
     area_in_hectares: "1",
   });
 
-  type FertilizerResult = {
-    crop: string;
-    recommendation: string;
-    details?: string;
-  };
-
   const [result, setResult] = useState<FertilizerResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +132,7 @@ export default function FertilizerRecommend() {
         );
       }
 
-      const data = await res.json();
+      const data: FertilizerResult = await res.json();
       setResult(data);
     } catch (error) {
       console.error("Fertilizer error:", error);
@@ -225,33 +229,19 @@ export default function FertilizerRecommend() {
       )}
 
       {/* Success Result */}
-      {result && !error && (
+      {result && result.fertilizer_recommendation.length > 0 && !error && (
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
-          <p className="text-lg">
-            🌱 <span className="font-semibold">Fertilizer Advice:</span>
-          </p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            <li>
-              Crop: <b>{result.crop}</b>
-            </li>
-            <li>
-              Recommended: <b>{result.recommendation}</b>
-            </li>
-            <li>Details: {result.details || "No extra details"}</li>
+          <p className="text-lg font-semibold mb-2">🌱 Fertilizer Advice:</p>
+          <ul className="list-disc list-inside space-y-2">
+            {result.fertilizer_recommendation.map((item, idx) => (
+              <li key={idx}>
+                <strong>{item.name}</strong>: {item.amount_kg_per_hectare} kg/ha
+                — <em>{item.stage}</em>
+              </li>
+            ))}
           </ul>
         </div>
       )}
-
-      {/* Instructions */}
-      <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-        <h3 className="font-semibold mb-2">📝 Instructions:</h3>
-        <ul className="list-disc list-inside space-y-1 text-blue-700">
-          <li>Select your crop</li>
-          <li>Enter your soil N, P, K values</li>
-          <li>Enter the area (hectares)</li>
-          <li>Click submit to get fertilizer gap analysis</li>
-        </ul>
-      </div>
     </div>
   );
 }
