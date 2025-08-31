@@ -3,7 +3,7 @@ const cors = require("cors");
 const axios = require("axios");
 
 const app = express();
-const PORT = 5000; // ← Confirm this matches what you use
+const PORT = 5000; // Main Node.js server port
 
 app.use(cors());
 app.use(express.json());
@@ -16,14 +16,14 @@ app.get("/api/hello", (req, res) => {
 // Route to forward request to FastAPI ML server
 app.post("/api/predict", async (req, res) => {
   try {
-    console.log("Received prediction request:", req.body); // ← Added logging
+    console.log("Received prediction request:", req.body);
 
     const { data } = await axios.post(
       "http://localhost:8000/predict",
       req.body
     );
 
-    console.log("FastAPI response:", data); // ← Added logging
+    console.log("FastAPI response:", data);
     res.json(data);
   } catch (err) {
     console.error("Error calling ML API:", err.message);
@@ -44,6 +44,20 @@ app.post("/api/fertilizer/recommend", async (req, res) => {
   } catch (err) {
     console.error("Error calling Fertilizer API:", err.message);
     res.status(502).json({ error: "Fertilizer API not responding" });
+  }
+});
+
+// NEW: Route for irrigation recommendation
+app.post("/api/irrigation/recommend", async (req, res) => {
+  try {
+    const { data } = await axios.post(
+      "http://localhost:5000/api/irrigation/recommend", // <--- irrigation port
+      req.body
+    );
+    res.json(data);
+  } catch (err) {
+    console.error("Error calling Irrigation API:", err.message);
+    res.status(502).json({ error: "Irrigation API not responding" });
   }
 });
 

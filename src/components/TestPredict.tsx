@@ -14,7 +14,6 @@ type FormData = {
   yield_ton_per_hec: string;
 };
 
-// Available options for dropdowns
 const STATES = [
   "andhra pradesh",
   "arunachal pradesh",
@@ -45,8 +44,32 @@ const STATES = [
   "uttarakhand",
   "west bengal",
 ];
-
 const CROP_TYPES = ["kharif", "rabi", "zaid", "summer", "winter", "whole year"];
+
+// Only numeric fields for number validation
+const numericFields = [
+  "nitrogen",
+  "phosphorus",
+  "potassium",
+  "pH",
+  "rainfall",
+  "temperature",
+  "area_in_hectares",
+  "production_in_tons",
+  "yield_ton_per_hec",
+];
+
+const ranges: { [key: string]: [number, number] } = {
+  nitrogen: [0, 140],
+  phosphorus: [5, 145],
+  potassium: [5, 205],
+  pH: [0, 14],
+  rainfall: [0, 300],
+  temperature: [0, 50],
+  area_in_hectares: [0.1, 100000],
+  production_in_tons: [0.1, 1000000],
+  yield_ton_per_hec: [0.01, 100],
+};
 
 export default function TestPredict() {
   const [formData, setFormData] = useState<FormData>({
@@ -63,32 +86,58 @@ export default function TestPredict() {
     yield_ton_per_hec: "",
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Only validate number/range for numeric fields, string required for dropdowns
+  const validateField = (name: string, value: string) => {
+    if (value.trim() === "") return "This field is required";
+    if (numericFields.includes(name)) {
+      const num = Number(value);
+      if (isNaN(num)) return "Must be a number";
+      if (ranges[name]) {
+        const [min, max] = ranges[name];
+        if (num < min || num > max) return `Must be between ${min} and ${max}`;
+      }
+    }
+    return "";
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null); // Clear error when user starts typing
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Validate this field
+    const errorMsg = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    setError(null); // clear API error on change
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Final validation for all fields
+    const newErrors: { [key: string]: string } = {};
+    Object.keys(formData).forEach((key) => {
+      const msg = validateField(key, formData[key as keyof FormData]);
+      if (msg) newErrors[key] = msg;
+    });
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) return; // stop submit
+
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      // Validate required fields
-      if (!formData.state_name || !formData.crop_type) {
-        throw new Error("Please select both state name and crop type");
-      }
-
       const payload = {
-        state_name: formData.state_name, // Keep as string
-        crop_type: formData.crop_type, // Keep as string
+        state_name: formData.state_name,
+        crop_type: formData.crop_type,
         nitrogen: parseFloat(formData.nitrogen),
         phosphorus: parseFloat(formData.phosphorus),
         potassium: parseFloat(formData.potassium),
@@ -99,8 +148,6 @@ export default function TestPredict() {
         production_in_tons: parseFloat(formData.production_in_tons),
         yield_ton_per_hec: parseFloat(formData.yield_ton_per_hec),
       };
-
-      console.log("Sending payload:", payload);
 
       const res = await fetch("/api/predict", {
         method: "POST",
@@ -124,9 +171,8 @@ export default function TestPredict() {
       }
 
       setResult(data.prediction || "No prediction returned");
-    } catch (error) {
-      console.error("Prediction error:", error);
-      const errorMessage = (error as Error).message;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
       setResult(null);
     } finally {
@@ -134,22 +180,10 @@ export default function TestPredict() {
     }
   };
 
-  // Sample data for quick testing
-  const fillSampleData = () => {
-    setFormData({
-      state_name: "andhra pradesh",
-      crop_type: "kharif",
-      nitrogen: "120",
-      phosphorus: "40",
-      potassium: "20",
-      pH: "5.46",
-      rainfall: "654.34",
-      temperature: "29.27",
-      area_in_hectares: "7300",
-      production_in_tons: "9400",
-      yield_ton_per_hec: "1.29",
-    });
-  };
+  // Button enabled when all fields valid and filled in
+  const isFormValid =
+    Object.values(errors).every((err) => err === "") &&
+    Object.values(formData).every((val) => val.trim() !== "");
 
   return (
     <div className="p-4 overflow-auto max-h-screen">
@@ -157,7 +191,21 @@ export default function TestPredict() {
         <h2 className="text-xl font-bold">🌱 Crop Predictor</h2>
         <button
           type="button"
-          onClick={fillSampleData}
+          onClick={() =>
+            setFormData({
+              state_name: "andhra pradesh",
+              crop_type: "kharif",
+              nitrogen: "120",
+              phosphorus: "40",
+              potassium: "20",
+              pH: "5.46",
+              rainfall: "200",
+              temperature: "29.27",
+              area_in_hectares: "100",
+              production_in_tons: "500",
+              yield_ton_per_hec: "5",
+            })
+          }
           className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
         >
           Fill Sample Data
@@ -165,7 +213,6 @@ export default function TestPredict() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-3">
-        {/* State Name Dropdown */}
         <div>
           <label className="block text-sm font-medium mb-1">State Name *</label>
           <select
@@ -182,9 +229,11 @@ export default function TestPredict() {
               </option>
             ))}
           </select>
+          {errors.state_name && (
+            <p className="text-red-500 text-sm mt-1">{errors.state_name}</p>
+          )}
         </div>
 
-        {/* Crop Type Dropdown */}
         <div>
           <label className="block text-sm font-medium mb-1">Crop Type *</label>
           <select
@@ -201,9 +250,11 @@ export default function TestPredict() {
               </option>
             ))}
           </select>
+          {errors.crop_type && (
+            <p className="text-red-500 text-sm mt-1">{errors.crop_type}</p>
+          )}
         </div>
 
-        {/* Numerical Input Fields */}
         {[
           ["nitrogen", "Nitrogen (N)", "kg/ha"],
           ["phosphorus", "Phosphorus (P)", "kg/ha"],
@@ -226,22 +277,36 @@ export default function TestPredict() {
               value={formData[key as keyof FormData]}
               onChange={handleChange}
               placeholder={`Enter ${label.toLowerCase()}`}
-              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full border p-2 rounded focus:outline-none focus:ring-2 ${
+                errors[key as string]
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500"
+              }`}
               required
+              min={ranges[key]?.[0]}
+              max={ranges[key]?.[1]}
             />
+            {errors[key as string] && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors[key as string]}
+              </p>
+            )}
           </div>
         ))}
 
         <button
           type="submit"
-          disabled={loading}
-          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors mt-4"
+          disabled={!isFormValid || loading}
+          className={`px-4 py-2 rounded text-white mt-4 transition-colors ${
+            isFormValid && !loading
+              ? "bg-blue-500 hover:bg-blue-600"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
           {loading ? "🔄 Predicting..." : "🚀 Predict Crop"}
         </button>
       </form>
 
-      {/* Error Display */}
       {error && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
           <p className="text-red-700">
@@ -249,8 +314,6 @@ export default function TestPredict() {
           </p>
         </div>
       )}
-
-      {/* Success Result */}
       {result && !error && (
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
           <p className="text-lg">
@@ -261,19 +324,6 @@ export default function TestPredict() {
           </p>
         </div>
       )}
-
-      {/* API Instructions */}
-      <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-        <h3 className="font-semibold mb-2">📝 Instructions:</h3>
-        <ul className="list-disc list-inside space-y-1 text-blue-700">
-          <li>Select your state and crop type from the dropdowns</li>
-          <li>Fill in all the numerical fields with appropriate values</li>
-          <li>Click "Fill Sample Data" to test with example values</li>
-          <li>
-            The API will return the most suitable crop for your conditions
-          </li>
-        </ul>
-      </div>
     </div>
   );
 }

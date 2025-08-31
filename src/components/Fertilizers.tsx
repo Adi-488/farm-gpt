@@ -86,33 +86,76 @@ export default function FertilizerRecommend() {
   const [result, setResult] = useState<FertilizerResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // ✅ validation rules
+  const validateField = (name: string, value: string): string => {
+    const num = parseFloat(value);
+    if (value === "") return "This field is required";
+
+    switch (name) {
+      case "nitrogen":
+      case "phosphorus":
+      case "potassium":
+        if (num < 0 || num > 200)
+          return "Value must be between 0 and 200 kg/ha";
+        break;
+      case "area_in_hectares":
+        if (num <= 0 || num > 1000)
+          return "Area must be between 1 and 1000 hectares";
+        break;
+      default:
+        break;
+    }
+    return "";
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    const errorMsg = validateField(name, value);
+    setErrors((prev) => {
+      const updated = { ...prev };
+      if (errorMsg) updated[name] = errorMsg;
+      else delete updated[name];
+      return updated;
+    });
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const newErrors: { [key: string]: string } = {};
+    Object.keys(formData).forEach((key) => {
+      const errorMsg = validateField(
+        key,
+        formData[key as keyof FertilizerFormData]
+      );
+      if (errorMsg) newErrors[key] = errorMsg;
+    });
+
+    if (!formData.crop) newErrors["crop"] = "Please select a crop";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      if (!formData.crop) {
-        throw new Error("Please select a crop");
-      }
-
       const payload = {
         crop: formData.crop,
         actual_N: parseFloat(formData.nitrogen),
         actual_P: parseFloat(formData.phosphorus),
         actual_K: parseFloat(formData.potassium),
       };
-
-      console.log("Sending payload:", payload);
 
       const res = await fetch(
         "http://localhost:9000/api/fertilizer/recommend",
@@ -153,6 +196,11 @@ export default function FertilizerRecommend() {
     });
   };
 
+  const isFormValid =
+    Object.keys(errors).length === 0 &&
+    formData.crop !== "" &&
+    Object.values(formData).every((val) => val !== "");
+
   return (
     <div className="p-4 overflow-auto max-h-screen">
       <div className="flex justify-between items-center mb-4">
@@ -184,6 +232,7 @@ export default function FertilizerRecommend() {
               </option>
             ))}
           </select>
+          {errors.crop && <p className="text-red-600 text-sm">{errors.crop}</p>}
         </div>
 
         {/* NPK Inputs */}
@@ -207,12 +256,15 @@ export default function FertilizerRecommend() {
               className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+            {errors[key] && (
+              <p className="text-red-600 text-sm">{errors[key]}</p>
+            )}
           </div>
         ))}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !isFormValid}
           className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors mt-4"
         >
           {loading ? "🔄 Checking..." : "💧 Recommend Fertilizer"}

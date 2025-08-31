@@ -10,6 +10,7 @@ import Fertilizers from "./components/Fertilizers";
 import { Dashboard } from "./pages/Dashboard"; // Import Dashboard
 import "./index.css";
 import { Layout } from "./components/Layout";
+import Irrigation from "./components/Irrigation"; // adjust the path as needed
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,14 @@ const App = () => (
             element={
               <Layout>
                 <Fertilizers />
+              </Layout>
+            }
+          />
+          <Route
+            path="/irrigation"
+            element={
+              <Layout>
+                <Irrigation />
               </Layout>
             }
           />

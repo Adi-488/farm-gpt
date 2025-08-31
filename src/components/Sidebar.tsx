@@ -18,6 +18,11 @@ const navigation = [
   { name: "Weather", icon: Cloud, path: "/weather" },
   { name: "Soil Metrics", icon: Droplet, path: "/soil-metrics" },
   { name: "Disease Alerts", icon: AlertTriangle, path: "/disease-alerts" },
+  {
+    name: "Irrigation Recommendations",
+    icon: AlertTriangle,
+    path: "/Irrigation",
+  },
 ];
 
 export function Sidebar() {
